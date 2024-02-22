@@ -31,9 +31,11 @@ import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.swt.widgets.Widget;
 import org.pentaho.di.base.AbstractMeta;
 import org.pentaho.di.core.Const;
+import org.pentaho.di.repository.Repository;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.ui.core.gui.GUIResource;
 import org.pentaho.di.ui.core.widget.tree.TreeNode;
+import org.pentaho.di.ui.spoon.Spoon;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -188,6 +190,10 @@ public class TreeManager {
     TreeItem childTreeItem = createTreeItem( treeNode, tree );
     if ( treeNode.hasChildren() ) {
       for ( TreeNode childTreeNode : treeNode.getChildren() ) {
+        Repository rep = Spoon.getInstance().getRepository();
+        if( childTreeNode.getLabel().equalsIgnoreCase( "vfs connections" ) && rep!=null && !rep.getUserInfo().isAdmin() ){
+          continue;
+        }
         render( childTreeNode, childTreeItem );
       }
     }
