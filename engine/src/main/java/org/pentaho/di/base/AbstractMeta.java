@@ -441,14 +441,6 @@ public abstract class AbstractMeta implements ChangedFlagInterface, UndoInterfac
     allDatabasesUpdated();
   }
 
-  public TransSupplier getTransSupplier() {
-    return transSupplier;
-  }
-
-  public void setTransSupplier( TransSupplier transSupplier ) {
-    this.transSupplier = transSupplier;
-  }
-
   /**
    * Gets the repository.
    *

@@ -13,6 +13,9 @@
 
 package org.pentaho.di.engine.configuration.impl;
 
+import org.pentaho.di.core.bowl.Bowl;
+import org.pentaho.di.core.bowl.DefaultBowl;
+import org.pentaho.di.engine.configuration.api.CheckedMetaStoreSupplier;
 import org.pentaho.di.engine.configuration.api.RunConfiguration;
 import org.pentaho.di.engine.configuration.api.RunConfigurationExecutor;
 import org.pentaho.di.engine.configuration.api.RunConfigurationProvider;
@@ -28,14 +31,9 @@ import java.util.List;
  */
 public class RunConfigurationManager implements RunConfigurationService {
 
-  private RunConfigurationProvider defaultRunConfigurationProvider;
-  private List<RunConfigurationProvider> runConfigurationProviders = new ArrayList<>();
+  private List<RunConfigurationProvider> runConfigurationProviders;
+  private static RunConfigurationManager instance;
 
-<<<<<<< HEAD
-  public static RunConfigurationManager getInstance( CheckedMetaStoreSupplier supplier ) {
-    RunConfigurationProvider provider = new DefaultRunConfigurationProvider( supplier );
-    return new RunConfigurationManager( Collections.singletonList( provider ) );
-=======
   public static RunConfigurationManager getInstance() {
     if ( null == instance ) {
       instance = new RunConfigurationManager();
@@ -44,19 +42,10 @@ public class RunConfigurationManager implements RunConfigurationService {
   }
 
   public static RunConfigurationManager getInstance( Bowl bowl ) {
-
-    CheckedMetaStoreSupplier bowlSupplier = () -> bowl != null ? bowl.getMetastore() :
-        DefaultBowl.getInstance().getMetastore();
-    RunConfigurationProvider provider = new DefaultRunConfigurationProvider( bowlSupplier );
-<<<<<<< HEAD
-    List<RunConfigurationProvider> providers = new ArrayList<>();
-    providers.add( provider );
-    providers.add( new SparkRunConfigurationProvider() );
-    return new RunConfigurationManager( providers );
->>>>>>> f9ee9d04cd ([BACKLOG-43255] - Fix AEL Unit tests in 10.3)
-=======
-    return  new RunConfigurationManager( Collections.singletonList( provider ) );
->>>>>>> b925f12804 ([BACKLOG-42787] - Move all the AEL code added in pentaho-kettle to a new enterprise plugin)
+    CheckedMetaStoreSupplier bowlSupplier =
+      () -> bowl != null ? bowl.getMetastore() : DefaultBowl.getInstance().getMetastore();
+    return new RunConfigurationManager(
+      RunConfigurationProviderFactoryManagerImpl.getInstance().generateProviders( bowlSupplier ) );
   }
 
   public RunConfigurationManager( List<RunConfigurationProvider> runConfigurationProviders ) {
@@ -64,9 +53,14 @@ public class RunConfigurationManager implements RunConfigurationService {
   }
 
   private RunConfigurationManager() {
-    this.defaultRunConfigurationProvider = new DefaultRunConfigurationProvider();
+    runConfigurationProviders = RunConfigurationProviderFactoryManagerImpl.getInstance().generateProviders();
   }
 
+  /**
+   * Load the RunConfigurations present in each RunConfigurationProvider
+   *
+   * @return
+   */
   @Override public List<RunConfiguration> load() {
     List<RunConfiguration> runConfigurations = new ArrayList<>();
     for ( RunConfigurationProvider runConfigurationProvider : getRunConfigurationProviders() ) {
@@ -93,7 +87,8 @@ public class RunConfigurationManager implements RunConfigurationService {
 
   @Override
   public boolean save( RunConfiguration runConfiguration ) {
-    RunConfigurationProvider runConfigurationProvider = runConfiguration != null ? getProvider( runConfiguration.getType() ) : null;
+    RunConfigurationProvider runConfigurationProvider =
+      runConfiguration != null ? getProvider( runConfiguration.getType() ) : null;
     return runConfigurationProvider != null && runConfigurationProvider.save( runConfiguration );
   }
 
@@ -178,9 +173,6 @@ public class RunConfigurationManager implements RunConfigurationService {
 
   public List<RunConfigurationProvider> getRunConfigurationProviders( String type ) {
     List<RunConfigurationProvider> runConfigurationProviders = new ArrayList<>();
-    if ( defaultRunConfigurationProvider != null ) {
-      runConfigurationProviders.add( defaultRunConfigurationProvider );
-    }
     for ( RunConfigurationProvider runConfigurationProvider : this.runConfigurationProviders ) {
       if ( runConfigurationProvider.isSupported( type ) ) {
         runConfigurationProviders.add( runConfigurationProvider );
@@ -191,19 +183,7 @@ public class RunConfigurationManager implements RunConfigurationService {
 
   public List<RunConfigurationProvider> getRunConfigurationProviders() {
     List<RunConfigurationProvider> runConfigurationProviders = new ArrayList<>();
-    if ( defaultRunConfigurationProvider != null ) {
-      runConfigurationProviders.add( defaultRunConfigurationProvider );
-    }
     runConfigurationProviders.addAll( this.runConfigurationProviders );
     return runConfigurationProviders;
-  }
-
-  public RunConfigurationProvider getDefaultRunConfigurationProvider() {
-    return defaultRunConfigurationProvider;
-  }
-
-  public void setDefaultRunConfigurationProvider(
-    RunConfigurationProvider defaultRunConfigurationProvider ) {
-    this.defaultRunConfigurationProvider = defaultRunConfigurationProvider;
   }
 }
