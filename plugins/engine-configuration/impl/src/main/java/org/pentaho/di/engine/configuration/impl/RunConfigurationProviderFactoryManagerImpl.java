@@ -20,6 +20,7 @@ import org.pentaho.di.engine.configuration.api.RunConfigurationProvider;
 import org.pentaho.di.engine.configuration.api.RunConfigurationProviderFactory;
 import org.pentaho.di.engine.configuration.api.RunConfigurationProviderFactoryManager;
 import org.pentaho.di.engine.configuration.impl.pentaho.DefaultRunConfigurationProviderFactory;
+import org.pentaho.di.metastore.MetaStoreConst;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,7 @@ public class RunConfigurationProviderFactoryManagerImpl implements RunConfigurat
   }
 
   public List<RunConfigurationProvider> generateProviders() {
-    return generateProviders( null );
+    return generateProviders( MetaStoreConst::getDefaultMetastore );
   }
 
   /**

@@ -13,7 +13,6 @@
 
 package org.pentaho.di.engine.configuration.api;
 
-import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.metastore.api.IMetaStore;
 import org.pentaho.metastore.api.exceptions.MetaStoreException;
 import org.pentaho.metastore.persist.MetaStoreFactory;
@@ -31,11 +30,7 @@ public abstract class MetaStoreRunConfigurationFactory implements RunConfigurati
   protected CheckedMetaStoreSupplier metastoreSupplier;
 
   public MetaStoreRunConfigurationFactory( CheckedMetaStoreSupplier metastoreSupplier ) {
-    if ( metastoreSupplier == null ) {
-      this.metastoreSupplier = MetaStoreConst::getDefaultMetastore;
-    } else {
-      this.metastoreSupplier = metastoreSupplier;
-    }
+    this.metastoreSupplier = metastoreSupplier;
   }
 
   private <T extends RunConfiguration> MetaStoreFactory<T> getMetastoreFactory( Class<T> clazz,
