@@ -12,6 +12,7 @@
 
 package org.pentaho.di.engine.configuration.impl;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.engine.configuration.api.CheckedMetaStoreSupplier;
@@ -29,7 +30,7 @@ import java.util.List;
  * The RunConfigurationProviderFactoryManager is used to manage the registration of RunConfiguration types and
  * generate their RunConfigurationProviders for RunConfigurationManager instances associated with Projects
  * <p>
- * Each RunConfiguration type (e.g. Pentaho, Spark) has a RunConfigurationProvider that allows users to create
+ * Each RunConfiguration type has a RunConfigurationProvider that allows users to create
  * RunConfigurations of that type.
  * Since RunConfigurationProviders are tied to metastores, and metastores are tied to Projects, we need to be able to
  * create (via Factories) instances of these Providers for each RunConfigurationManager instance associated with each
@@ -40,16 +41,16 @@ public class RunConfigurationProviderFactoryManagerImpl implements RunConfigurat
 
   private ArrayList<RunConfigurationProviderFactory> factories;
 
-  Logger logger = LoggerFactory.getLogger( RunConfigurationProviderFactoryManagerImpl.class );
+  private static Logger logger = LoggerFactory.getLogger( RunConfigurationProviderFactoryManagerImpl.class );
 
-  public static RunConfigurationProviderFactoryManagerImpl getInstance() {
+  public static synchronized RunConfigurationProviderFactoryManagerImpl getInstance() {
     if ( null == instance ) {
       instance = new RunConfigurationProviderFactoryManagerImpl();
     }
     return instance;
   }
 
-  public RunConfigurationProviderFactoryManagerImpl() {
+  private RunConfigurationProviderFactoryManagerImpl() {
     factories = new ArrayList<>();
     factories.add( new DefaultRunConfigurationProviderFactory() );
 
@@ -75,5 +76,18 @@ public class RunConfigurationProviderFactoryManagerImpl implements RunConfigurat
     List<RunConfigurationProvider> providers = new ArrayList<>();
     factories.forEach( factory -> providers.add( factory.getProvider( checkedMetaStoreSupplier ) ) );
     return providers;
+  }
+
+  /**
+   * Used by test class
+   */
+  @VisibleForTesting
+  void setFactories( ArrayList<RunConfigurationProviderFactory> factories ) {
+    this.factories = factories;
+  }
+
+  @VisibleForTesting
+  ArrayList<RunConfigurationProviderFactory> getFactories() {
+    return factories;
   }
 }

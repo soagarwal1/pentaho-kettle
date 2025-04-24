@@ -12,55 +12,91 @@
 
 package org.pentaho.di.engine.configuration.impl;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.pentaho.di.core.service.PluginServiceLoader;
 import org.pentaho.di.engine.configuration.api.CheckedMetaStoreSupplier;
 import org.pentaho.di.engine.configuration.api.RunConfigurationProvider;
 import org.pentaho.di.engine.configuration.api.RunConfigurationProviderFactory;
-import org.pentaho.di.engine.configuration.impl.pentaho.DefaultRunConfigurationProviderFactory;
-import org.pentaho.metastore.stores.memory.MemoryMetaStore;
+import org.pentaho.di.engine.configuration.impl.pentaho.DefaultRunConfigurationProvider;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class RunConfigurationProviderFactoryManagerImplTest {
 
-  @Test
-  public void testDefaultProvidedMetastore() {
-    MemoryMetaStore memoryMetaStore = new MemoryMetaStore();
-    CheckedMetaStoreSupplier metastoreSupplier = () -> memoryMetaStore;
-    List<RunConfigurationProvider> providers =
-      new RunConfigurationProviderFactoryManagerImpl().generateProviders( metastoreSupplier );
 
-    Assert.assertEquals( 1, providers.size() );
-    Assert.assertEquals( "Pentaho", providers.get( 0 ).getType() );
+  ArrayList<RunConfigurationProviderFactory> savedFactories;
+
+  String DEFAULT_PROVIDER_TYPE = new DefaultRunConfigurationProvider( null ).getType();
+
+  /**
+   * This will serve the double purpose of initializing the singleton in the first call
+   * and in backup/restore of the default state
+   */
+  @Before
+  public void saveDefaults() {
+    savedFactories = RunConfigurationProviderFactoryManagerImpl.getInstance()
+      .getFactories();
+  }
+
+  @After
+  public void restoreDefaults() {
+    RunConfigurationProviderFactoryManagerImpl.getInstance().setFactories( savedFactories );
   }
 
   @Test
-  public void testPluginServiceLoaded() {
-    MemoryMetaStore memoryMetaStore = new MemoryMetaStore();
-    CheckedMetaStoreSupplier metastoreSupplier = () -> memoryMetaStore;
+  public void testDefault() {
+    List<RunConfigurationProvider> providers =
+      RunConfigurationProviderFactoryManagerImpl.getInstance().generateProviders();
 
-    Collection<RunConfigurationProviderFactory> factories = new ArrayList<>();
-    factories.add( new DefaultRunConfigurationProviderFactory() );
+    Assert.assertEquals( 1, providers.size() );
+    Assert.assertEquals( DEFAULT_PROVIDER_TYPE, providers.get( 0 ).getType() );
+  }
 
-    try ( MockedStatic<PluginServiceLoader> pluginServiceLoaderMockedStatic = Mockito.mockStatic(
-      PluginServiceLoader.class ) ) {
-      pluginServiceLoaderMockedStatic.when(
-        () -> PluginServiceLoader.loadServices( RunConfigurationProviderFactory.class ) ).thenReturn( factories );
+  @Test
+  public void testAddFactories() {
+    String PROVIDER1_TYPE = "ONE";
+    String PROVIDER2_TYPE = "TWO";
 
-      List<RunConfigurationProvider> providers =
-        new RunConfigurationProviderFactoryManagerImpl().generateProviders( metastoreSupplier );
+    List<String> expectedProviderTypes =
+      Arrays.asList( DEFAULT_PROVIDER_TYPE, PROVIDER1_TYPE, PROVIDER2_TYPE );
 
-      Assert.assertEquals( 2, providers.size() );
-      Assert.assertEquals( "Pentaho", providers.get( 0 ).getType() );
-      Assert.assertEquals( "Pentaho", providers.get( 1 ).getType() );
-    } catch ( Exception e ) {
-      System.out.println( e );
-    }
+    CheckedMetaStoreSupplier metaStoreSupplier = mock( CheckedMetaStoreSupplier.class );
+
+    ArrayList<RunConfigurationProviderFactory> factories = new ArrayList<>();
+
+    RunConfigurationProviderFactory factory1 = mock( RunConfigurationProviderFactory.class );
+    RunConfigurationProviderFactory factory2 = mock( RunConfigurationProviderFactory.class );
+
+    RunConfigurationProvider provider1 = mock( RunConfigurationProvider.class );
+    RunConfigurationProvider provider2 = mock( RunConfigurationProvider.class );
+
+    when( provider1.getType() ).thenReturn( PROVIDER1_TYPE );
+    when( provider2.getType() ).thenReturn( PROVIDER2_TYPE );
+
+    when( factory1.getProvider( metaStoreSupplier ) ).thenReturn( provider1 );
+    when( factory2.getProvider( metaStoreSupplier ) ).thenReturn( provider2 );
+
+    factories.addAll( RunConfigurationProviderFactoryManagerImpl.getInstance().getFactories() );
+    factories.add( factory1 );
+    factories.add( factory2 );
+
+    RunConfigurationProviderFactoryManagerImpl.getInstance().setFactories( factories );
+
+    List<RunConfigurationProvider> providers =
+      RunConfigurationProviderFactoryManagerImpl.getInstance().generateProviders( metaStoreSupplier );
+
+    Assert.assertEquals( 3, providers.size() );
+
+    List<String> providerTypes = new ArrayList<>();
+    providers.stream().forEach( provider -> providerTypes.add( provider.getType() ) );
+
+    Assert.assertTrue( providerTypes.containsAll( expectedProviderTypes ) );
   }
 }

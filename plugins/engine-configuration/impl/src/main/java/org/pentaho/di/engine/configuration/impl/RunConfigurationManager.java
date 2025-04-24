@@ -21,8 +21,6 @@ import org.pentaho.di.engine.configuration.api.RunConfigurationExecutor;
 import org.pentaho.di.engine.configuration.api.RunConfigurationProvider;
 import org.pentaho.di.engine.configuration.api.RunConfigurationService;
 import org.pentaho.di.engine.configuration.impl.pentaho.DefaultRunConfigurationProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,7 +31,6 @@ import java.util.List;
  */
 public class RunConfigurationManager implements RunConfigurationService {
 
-  private Logger logger = LoggerFactory.getLogger( RunConfigurationManager.class );
   private List<RunConfigurationProvider> runConfigurationProviders;
   private static RunConfigurationManager instance;
 
