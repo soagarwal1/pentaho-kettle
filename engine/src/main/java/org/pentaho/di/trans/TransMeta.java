@@ -403,8 +403,6 @@ public class TransMeta extends AbstractMeta
   /** The transformation type. */
   protected TransformationType transformationType;
 
-  protected TransSupplier transSupplier;
-
   // //////////////////////////////////////////////////////////////////////////
 
   /** A list of localized strings corresponding to string descriptions of the undo/redo actions. */
@@ -726,7 +724,7 @@ public class TransMeta extends AbstractMeta
 
     log = LogChannel.GENERAL;
   }
-
+  
   @Override
   protected void initializeNonLocalSharedObjects() {
     super.initializeNonLocalSharedObjects();
@@ -738,14 +736,6 @@ public class TransMeta extends AbstractMeta
     localPartitionSchemaMgr = new ChangeTrackingPartitionSchemaManager(
         new PassthroughPartitionSchemaManager( localSharedObjects ) );
     readPartitionSchemaManager = new PassthroughPartitionSchemaManager( combinedSharedObjects );
-  }
-
-  public TransSupplier getTransSupplier() {
-    return transSupplier;
-  }
-
-  public void setTransSupplier( TransSupplier transSupplier ) {
-    this.transSupplier = transSupplier;
   }
 
   /**
