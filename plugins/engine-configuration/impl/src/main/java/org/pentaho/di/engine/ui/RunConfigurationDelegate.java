@@ -24,7 +24,7 @@ import org.pentaho.di.core.extension.ExtensionPointHandler;
 import org.pentaho.di.core.extension.KettleExtensionPoint;
 import org.pentaho.di.engine.configuration.api.RunConfiguration;
 import org.pentaho.di.engine.configuration.api.RunConfigurationService;
-import org.pentaho.di.engine.configuration.impl.CheckedMetaStoreSupplier;
+import org.pentaho.di.engine.configuration.api.CheckedMetaStoreSupplier;
 import org.pentaho.di.engine.configuration.impl.RunConfigurationManager;
 import org.pentaho.di.engine.configuration.impl.pentaho.DefaultRunConfiguration;
 import org.pentaho.di.i18n.BaseMessages;

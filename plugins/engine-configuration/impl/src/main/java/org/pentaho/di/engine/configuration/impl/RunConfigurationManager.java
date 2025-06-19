@@ -13,8 +13,6 @@
 
 package org.pentaho.di.engine.configuration.impl;
 
-import org.pentaho.di.core.bowl.Bowl;
-import org.pentaho.di.core.bowl.DefaultBowl;
 import org.pentaho.di.engine.configuration.api.CheckedMetaStoreSupplier;
 import org.pentaho.di.engine.configuration.api.RunConfiguration;
 import org.pentaho.di.engine.configuration.api.RunConfigurationExecutor;
@@ -31,19 +29,9 @@ import java.util.List;
  */
 public class RunConfigurationManager implements RunConfigurationService {
 
-  private List<RunConfigurationProvider> runConfigurationProviders;
-  private static RunConfigurationManager instance;
+  private final List<RunConfigurationProvider> runConfigurationProviders;
 
-  public static RunConfigurationManager getInstance() {
-    if ( null == instance ) {
-      instance = new RunConfigurationManager();
-    }
-    return instance;
-  }
-
-  public static RunConfigurationManager getInstance( Bowl bowl ) {
-    CheckedMetaStoreSupplier bowlSupplier =
-      () -> bowl != null ? bowl.getMetastore() : DefaultBowl.getInstance().getMetastore();
+  public static RunConfigurationManager getInstance( CheckedMetaStoreSupplier bowlSupplier ) {
     return new RunConfigurationManager(
       RunConfigurationProviderFactoryManagerImpl.getInstance().generateProviders( bowlSupplier ) );
   }

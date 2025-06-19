@@ -1378,7 +1378,7 @@ public class TextFileInputMeta extends BaseFileInputMeta<BaseFileInputAdditional
       .getFileObject( variableSpace.environmentSubstitute( vfsFileName ), variableSpace );
   }
   @Override
-  public void resolve() {
+  public void resolve( Bowl bowl ) {
     for ( int i = 0; i < inputFiles.fileName.length; i++ ) {
       if ( inputFiles.fileName[i] != null && !inputFiles.fileName[i].isEmpty() ) {
         try {
