@@ -17,8 +17,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.pentaho.di.plugins</groupId>
-      <artifactId>pdi-engine-configuration-api</artifactId>
+      <groupId>org.pentaho.di</groupId>
+      <artifactId>kettle-ui-api</artifactId>
       <version>${pdi.version}</version>
       <scope>provided</scope>
     </dependency>

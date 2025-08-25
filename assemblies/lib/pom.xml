@@ -294,8 +294,8 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.pentaho.di.plugins</groupId>
-      <artifactId>pdi-engine-configuration-api</artifactId>
+      <groupId>org.pentaho.di</groupId>
+      <artifactId>kettle-ui-api</artifactId>
       <version>${project.version}</version>
     </dependency>
 

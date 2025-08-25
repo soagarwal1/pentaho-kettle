@@ -121,6 +121,11 @@
       <artifactId>pentaho-platform-api</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.pentaho.di</groupId>
+      <artifactId>kettle-ui-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- Reporting dependencies -->
     <dependency>
