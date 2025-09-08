@@ -102,7 +102,7 @@ public class PanCommandExecutorTest {
       .thenReturn( directoryInterface );
 
     // call real methods for loadTransFromFilesystem(), loadTransFromRepository();
-    doCallRealMethod().when( mockedPanCommandExecutor ).loadTransFromFilesystem( anyString(), anyString(), anyString(), any() );
+    doCallRealMethod().when( mockedPanCommandExecutor ).loadTransFromFilesystem( anyString(), anyString(), anyString(), any(), any() );
     doCallRealMethod().when( mockedPanCommandExecutor ).loadTransFromRepository( any(), anyString(), anyString() );
     doCallRealMethod().when( mockedPanCommandExecutor ).decodeBase64ToZipFile( any(), anyBoolean() );
     doCallRealMethod().when( mockedPanCommandExecutor ).decodeBase64ToZipFile( any(), anyString() );
@@ -139,7 +139,7 @@ public class PanCommandExecutorTest {
 
     String fullPath = getClass().getResource( SAMPLE_KTR ).getPath();
 
-    Trans trans = mockedPanCommandExecutor.loadTransFromFilesystem( "", fullPath, "", "" );
+    Trans trans = mockedPanCommandExecutor.loadTransFromFilesystem( "", fullPath, "", "", "" );
     assertNotNull( trans );
     assertNotNull( trans.getMetaStore() );
 
@@ -151,7 +151,7 @@ public class PanCommandExecutorTest {
     File zipFile = new File( getClass().getResource( "testKtrArchive.zip" ).toURI() );
     String base64Zip = Base64.getEncoder().encodeToString( FileUtils.readFileToByteArray( zipFile ) );
     Trans trans = mockedPanCommandExecutor.loadTransFromFilesystem( "", fileName, "",
-      base64Zip );
+      base64Zip, "" );
     assertNotNull( trans );
   }
 
@@ -203,7 +203,7 @@ public class PanCommandExecutorTest {
     when( params.getLocalFile() ).thenReturn( fullPath );
     when( params.getLocalJarFile() ).thenReturn( "" );
     when( params.getBase64Zip() ).thenReturn( "" );
-    Trans trans = mockedPanCommandExecutor.loadTransFromFilesystem( "", fullPath, "", "" );
+    Trans trans = mockedPanCommandExecutor.loadTransFromFilesystem( "", fullPath, "", "", "" );
 
     PanCommandExecutor panCommandExecutor = new PanCommandExecutor( PanCommandExecutor.class );
     Result result = panCommandExecutor.execute( params );
@@ -237,7 +237,7 @@ public class PanCommandExecutorTest {
     when( params.getLocalFile() ).thenReturn( fullPath );
     when( params.getLocalJarFile() ).thenReturn( "" );
     when( params.getBase64Zip() ).thenReturn( "" );
-    Trans trans = mockedPanCommandExecutor.loadTransFromFilesystem( "", fullPath, "", "" );
+    Trans trans = mockedPanCommandExecutor.loadTransFromFilesystem( "", fullPath, "", "", "" );
 
     PanCommandExecutor panCommandExecutor = new PanCommandExecutor( PanCommandExecutor.class );
     Result result = panCommandExecutor.execute( params );
@@ -269,7 +269,7 @@ public class PanCommandExecutorTest {
     try {
       trans =
         mockedPanCommandExecutor.loadTransFromFilesystem( "", FAIL_ON_INIT_KTR, "",
-          BASE64_FAIL_ON_INIT_KTR );
+          BASE64_FAIL_ON_INIT_KTR, "" );
     } catch ( KettleXMLException e ) {
       kettleXMLExceptionThrown = true;
     }

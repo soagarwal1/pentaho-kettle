@@ -71,6 +71,7 @@ public class Pan {
       StringBuilder optionVersion, optionJarFilename, optionListParam, optionMetrics, initialDir;
       StringBuilder optionResultSetStepName, optionResultSetCopyNumber;
       StringBuilder optionBase64Zip, optionUuid;
+      StringBuilder optionRunConfiguration;
 
       NamedParams optionParams = new NamedParamsDefault();
 
@@ -153,6 +154,9 @@ public class Pan {
             new StringBuilder(), false, true ),
           new CommandLineOption(
             "uuid", "UUID", optionUuid =
+            new StringBuilder(), false, true ),
+          new CommandLineOption(
+            "runConfig", "RunConfiguration", optionRunConfiguration =
             new StringBuilder(), false, true ),
           new CommandLineOption(
             "metrics", BaseMessages.getString( PKG, "Pan.ComdLine.Metrics" ), optionMetrics =
@@ -271,6 +275,7 @@ public class Pan {
         .base64Zip( optionBase64Zip.toString() )
         .namedParams( optionParams )
         .pluginNamedParams( pluginNamedParams )
+        .runConfiguration( optionRunConfiguration.toString() )
         .build();
 
       Result rslt = getCommandExecutor().execute( transParams, args.toArray( new String[ args.size() ] ) );

@@ -810,7 +810,7 @@ public class Trans implements VariableSpace, NamedParams, HasLogChannelInterface
     log.snap( Metrics.METRIC_TRANSFORMATION_EXECUTION_START );
     log.snap( Metrics.METRIC_TRANSFORMATION_INIT_START );
     ExtensionPointHandler.callExtensionPoint( log, KettleExtensionPoint.TransformationPrepareExecution.id, this );
-
+    ExtensionPointHandler.callExtensionPoint( log, KettleExtensionPoint.RunConfigurationSelection.id, this );
     checkCompatibility();
 
     // Set the arguments on the transformation...

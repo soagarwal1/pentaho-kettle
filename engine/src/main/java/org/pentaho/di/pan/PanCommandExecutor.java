@@ -42,6 +42,7 @@ import org.pentaho.di.repository.Repository;
 import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryOperation;
+import org.pentaho.di.trans.DefaultTransFactoryManager;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.RowAdapter;
@@ -156,7 +157,7 @@ public class PanCommandExecutor extends AbstractBaseCommandExecutor {
         // You could implement some fail-over mechanism this way.
         if ( trans == null ) {
           trans = loadTransFromFilesystem( params.getLocalInitialDir(),
-            params.getLocalFile(), params.getLocalJarFile(), params.getBase64Zip() );
+            params.getLocalFile(), params.getLocalJarFile(), params.getBase64Zip(), params.getRunConfiguration() );
         }
 
 
@@ -365,7 +366,7 @@ public class PanCommandExecutor extends AbstractBaseCommandExecutor {
   }
 
   public Trans loadTransFromFilesystem( String initialDir, String filename, String jarFilename,
-    Serializable base64Zip ) throws Exception {
+    Serializable base64Zip, String runConfig ) throws Exception {
 
     Trans trans = null;
 
@@ -387,7 +388,7 @@ public class PanCommandExecutor extends AbstractBaseCommandExecutor {
 
       logDebug( "Pan.Log.LoadingTransXML", "" + filepath );
       TransMeta transMeta = new TransMeta( getBowl(), filepath );
-      trans = new Trans( transMeta );
+      trans = DefaultTransFactoryManager.getInstance().getTransFactory( runConfig ).create( transMeta, null );
     }
 
     if ( !Utils.isEmpty( jarFilename ) ) {
