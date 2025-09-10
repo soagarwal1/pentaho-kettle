@@ -303,7 +303,7 @@ public abstract class AvroOutputMetaBase extends BaseStepMeta implements StepMet
         String realFileName = getParentStepMeta().getParentTransMeta().environmentSubstitute( filename );
         FileObject fileObject = KettleVFS.getInstance( bowl ).getFileObject( realFileName );
         if ( AliasedFileObject.isAliasedFile( fileObject ) ) {
-          filename = ( (AliasedFileObject) fileObject ).getAELSafeURIString();
+          filename = ( (AliasedFileObject) fileObject ).getOriginalURIString();
         }
       } catch ( KettleFileException e ) {
         throw new RuntimeException( e );
@@ -315,7 +315,7 @@ public abstract class AvroOutputMetaBase extends BaseStepMeta implements StepMet
         String realSchemaFilename = getParentStepMeta().getParentTransMeta().environmentSubstitute( schemaFilename );
         FileObject fileObject = KettleVFS.getInstance( bowl ).getFileObject( realSchemaFilename );
         if ( AliasedFileObject.isAliasedFile( fileObject ) ) {
-          schemaFilename = ( (AliasedFileObject) fileObject ).getAELSafeURIString();
+          schemaFilename = ( (AliasedFileObject) fileObject ).getOriginalURIString();
         }
       } catch ( KettleFileException e ) {
         throw new RuntimeException( e );

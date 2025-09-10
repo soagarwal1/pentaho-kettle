@@ -228,7 +228,7 @@ public abstract class ConnectionFileObject extends AbstractFileObject<Connection
 
   @Override
   public String getOriginalURIString() {
-    return this.getName().toString();
+    return getResolvedFileObject().getPublicURIString();
   }
 
   @Override

@@ -439,7 +439,7 @@ public abstract class AvroInputMetaBase extends BaseStepMeta implements StepMeta
         FileObject fileObject = KettleVFS.getInstance( bowl )
           .getFileObject( realFileName );
         if ( AliasedFileObject.isAliasedFile( fileObject ) ) {
-          dataLocation = ( (AliasedFileObject) fileObject ).getAELSafeURIString();
+          dataLocation = ( (AliasedFileObject) fileObject ).getOriginalURIString();
         }
       } catch ( KettleFileException e ) {
         throw new RuntimeException( e );
@@ -452,7 +452,7 @@ public abstract class AvroInputMetaBase extends BaseStepMeta implements StepMeta
         FileObject fileObject = KettleVFS.getInstance( bowl )
           .getFileObject( realSchemaFilename );
         if ( AliasedFileObject.isAliasedFile( fileObject ) ) {
-          schemaLocation = ( (AliasedFileObject) fileObject ).getAELSafeURIString();
+          schemaLocation = ( (AliasedFileObject) fileObject ).getOriginalURIString();
         }
       } catch ( KettleFileException e ) {
         throw new RuntimeException( e );
