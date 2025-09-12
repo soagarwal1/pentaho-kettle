@@ -241,7 +241,9 @@ public class Params implements IParams {
     }
 
     public Builder pluginNamedParams( NamedParams pluginNamedParams ) {
-      this.pluginNamedParams = pluginNamedParams;
+        this.pluginNamedParams = pluginNamedParams;
+        return this;
+    }
     public Builder runConfiguration( String runConfiguration ) {
       this.runConfiguration = runConfiguration;
       return this;
@@ -595,19 +597,20 @@ public class Params implements IParams {
 
   @Override
   public Map<String, String> getPluginParams() {
-    if ( this.pluginNamedParams == null ) {
-      return Collections.emptyMap();
-    }
-    Map<String, String> pluginParams = new HashMap<>();
-
-    for ( String key : this.pluginNamedParams.listParameters() ) {
-      try {
-        pluginParams.put( key, this.pluginNamedParams.getParameterValue( key ) );
-      } catch ( UnknownParamException e ) {
-        /* no-op */
+      if (this.pluginNamedParams == null) {
+          return Collections.emptyMap();
       }
-    }
-    return pluginParams;
+      Map<String, String> pluginParams = new HashMap<>();
+
+      for (String key : this.pluginNamedParams.listParameters()) {
+          try {
+              pluginParams.put(key, this.pluginNamedParams.getParameterValue(key));
+          } catch (UnknownParamException e) {
+              /* no-op */
+          }
+      }
+      return pluginParams;
+  }
   public String getRunConfiguration() {
     return runConfiguration;
   }

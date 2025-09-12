@@ -24,6 +24,7 @@ import org.pentaho.di.core.util.Utils;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.metastore.MetaStoreConst;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.trans.DefaultTransFactoryManager;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
@@ -86,7 +87,7 @@ public class PanTransformationDelegate {
     ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.SpoonTransExecutionConfiguration.id, executionConfiguration);
 
     try {
-      ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.SpoonTransBeforeStart.id, new Object[] {
+      ExtensionPointHandler.callExtensionPoint(log, KettleExtensionPoint.TransBeforeStart.id, new Object[] {
         executionConfiguration, transMeta, transMeta, repository
       });
     } catch (KettleException e) {
@@ -141,7 +142,7 @@ public class PanTransformationDelegate {
 
     log.logBasic(BaseMessages.getString(PKG, "PanTransformationDelegate.Log.ExecutingLocally"));
 
-    Trans trans = new Trans(transMeta);
+    Trans trans = DefaultTransFactoryManager.getInstance().getTransFactory(executionConfiguration.getRunConfiguration()).create(transMeta,transMeta);
     trans.setRepository(repository);
     trans.setMetaStore(MetaStoreConst.getDefaultMetastore());
     

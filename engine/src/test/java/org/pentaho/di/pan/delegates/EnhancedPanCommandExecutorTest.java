@@ -206,7 +206,7 @@ public class EnhancedPanCommandExecutorTest {
 
   // Test 5: Special Commands Handling
   @Test
-  public void testListRepositoriesCommand() throws Exception {
+  public void testListRepositoriesCommand() throws Throwable {
     // Test listing repositories command
     Params listReposParams = new Params.Builder()
         .listRepos("Y")
@@ -230,7 +230,7 @@ public class EnhancedPanCommandExecutorTest {
 
   // Test 6: Transformation Loading
   @Test
-  public void testTransformationLoadingFailure() throws Exception {
+  public void testTransformationLoadingFailure() throws Throwable {
     // Test loading non-existent transformation
     Params fileParams = new Params.Builder()
         .localFile("nonexistent.ktr")
@@ -244,7 +244,7 @@ public class EnhancedPanCommandExecutorTest {
   }
 
   @Test
-  public void testParameterListingMode() throws Exception {
+  public void testParameterListingMode() throws Throwable {
     // Test parameter listing mode
     Params listParamsParams = new Params.Builder()
         .localFile("nonexistent.ktr") // Will fail to load but tests the flow
@@ -323,7 +323,7 @@ public class EnhancedPanCommandExecutorTest {
       Result result = executor.execute(null, new String[0]);
       // If it returns a result, it handled null gracefully
       assertNotNull("Should handle null params", result);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       // If it throws an exception, it should be a meaningful one
       assertNotNull("Exception should have a message", e.getMessage());
     }
@@ -337,7 +337,7 @@ public class EnhancedPanCommandExecutorTest {
       // Test with null arguments array
       Result result = executor.execute(validParams, null);
       assertNotNull("Should handle null arguments", result);
-    } catch (Exception e) {
+    } catch (Throwable e) {
       // Should handle null arguments gracefully
       assertTrue("Should handle null arguments without NPE", 
           !(e instanceof NullPointerException));

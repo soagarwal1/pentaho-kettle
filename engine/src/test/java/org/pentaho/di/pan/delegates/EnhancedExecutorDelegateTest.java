@@ -171,7 +171,7 @@ public class EnhancedExecutorDelegateTest {
   }
 
   @Test
-  public void testExecutionConfigurationIntegration() throws Exception {
+  public void testExecutionConfigurationIntegration() throws Throwable {
     // Test that execution configuration is properly created and used
     // by testing the overall execution flow rather than the private method
     Params configParams = new Params.Builder()
@@ -203,7 +203,7 @@ public class EnhancedExecutorDelegateTest {
   }
 
   @Test
-  public void testHandleSpecialCommandsListRepos() throws Exception {
+  public void testHandleSpecialCommandsListRepos() throws Throwable {
     // Create params for listing repositories
     Params listReposParams = new Params.Builder()
         .listRepos("Y")
@@ -218,7 +218,7 @@ public class EnhancedExecutorDelegateTest {
   }
 
   @Test
-  public void testLoadTransformationFromFilesystem() throws Exception {
+  public void testLoadTransformationFromFilesystem() throws Throwable {
     // Create params for loading from filesystem (will fail but tests the flow)
     Params fileParams = new Params.Builder()
         .localFile("nonexistent.ktr")
@@ -233,7 +233,7 @@ public class EnhancedExecutorDelegateTest {
   }
 
   @Test
-  public void testParameterListingMode() throws Exception {
+  public void testParameterListingMode() throws Throwable {
     // Create a mock transformation that we'll never actually load
     Params listParamsParams = new Params.Builder()
         .localFile("test.ktr")
@@ -317,9 +317,6 @@ public class EnhancedExecutorDelegateTest {
     } catch (Throwable t) {
       fail("Should not throw exception: " + t.getMessage());
     }
-  }
-
-    .thenReturn(errorResult);
 
     try {
       // Test error result handling
@@ -331,7 +328,6 @@ public class EnhancedExecutorDelegateTest {
     } catch (Throwable t) {
       fail("Should not throw exception: " + t.getMessage());
     }
-  }
   }
 
   @Test
