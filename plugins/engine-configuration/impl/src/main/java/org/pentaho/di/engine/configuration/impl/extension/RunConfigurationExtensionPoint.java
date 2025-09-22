@@ -13,38 +13,31 @@
 
 package org.pentaho.di.engine.configuration.impl.extension;
 
-import org.pentaho.di.core.bowl.Bowl;
-import org.pentaho.di.core.bowl.DefaultBowl;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.extension.ExtensionPoint;
 import org.pentaho.di.core.extension.ExtensionPointInterface;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.engine.configuration.impl.RunConfigurationManager;
+import org.pentaho.di.ui.spoon.Spoon;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * Created by bmorrise on 3/16/17.
  */
-@ExtensionPoint( id = "RunConfigurationExtensionPoint", extensionPointId = "RunConfiguration",
+@ExtensionPoint( id = "RunConfigurationExtensionPoint", extensionPointId = "SpoonRunConfiguration",
   description = "" )
 public class RunConfigurationExtensionPoint implements ExtensionPointInterface {
-
-  private final Function<Bowl, RunConfigurationManager> rcmProvider = bowl ->
-    RunConfigurationManager.getInstance( () -> bowl != null ? bowl.getMetastore()
-      : DefaultBowl.getInstance().getMetastore() );
 
   @SuppressWarnings( "unchecked" )
   @Override
   public void callExtensionPoint( LogChannelInterface logChannelInterface, Object o ) throws KettleException {
     List<String> runConfigurations = (ArrayList<String>) ( (Object[]) o )[ 0 ];
     String type = (String) ( (Object[]) o )[ 1 ];
-    Bowl bowl = (Bowl) ( (Object[]) o )[ 2 ];
 
     RunConfigurationManager runConfigurationManager =
-      rcmProvider.apply( bowl );
+      RunConfigurationManager.getInstance( () -> Spoon.getInstance().getExecutionBowl().getMetastore() );
 
     runConfigurations.addAll( runConfigurationManager.getNames( type ) );
   }

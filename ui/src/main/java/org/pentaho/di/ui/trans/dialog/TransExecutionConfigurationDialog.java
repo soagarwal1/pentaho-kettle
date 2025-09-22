@@ -154,8 +154,8 @@ public class TransExecutionConfigurationDialog extends ConfigurationDialog {
     List<String> runConfigurations = new ArrayList<>();
     try {
       ExtensionPointHandler
-        .callExtensionPoint( Spoon.getInstance().getLog(), KettleExtensionPoint.RunConfiguration.id,
-          new Object[] { runConfigurations, TransMeta.XML_TAG, Spoon.getInstance().getExecutionBowl() } );
+        .callExtensionPoint( Spoon.getInstance().getLog(), KettleExtensionPoint.SpoonRunConfiguration.id,
+          new Object[] { runConfigurations, TransMeta.XML_TAG } );
     } catch ( KettleException e ) {
       // Ignore errors
     }

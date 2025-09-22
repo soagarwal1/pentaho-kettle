@@ -23,6 +23,7 @@ import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.Result;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleSecurityException;
+import org.pentaho.di.core.logging.LogChannel;
 import org.pentaho.di.core.parameters.NamedParams;
 import org.pentaho.di.core.parameters.NamedParamsDefault;
 import org.pentaho.di.repository.RepositoriesMeta;
@@ -287,7 +288,7 @@ public class PanTest {
     }
   }
 
-  private static class PanCommandExecutorForTesting extends PanCommandExecutor {
+  private static class PanCommandExecutorForTesting extends EnhancedPanCommandExecutor {
 
     private final Repository testRepository;
     private final RepositoryMeta testRepositoryMeta;
@@ -295,7 +296,7 @@ public class PanTest {
 
     public PanCommandExecutorForTesting( Repository testRepository, RepositoryMeta testRepositoryMeta,
                                          RepositoriesMeta testRepositoriesMeta ) {
-      super( Pan.class );
+      super( Pan.class, new LogChannel( Pan.STRING_PAN ) );
       this.testRepository = testRepository;
       this.testRepositoryMeta = testRepositoryMeta;
       this.testRepositoriesMeta = testRepositoriesMeta;
