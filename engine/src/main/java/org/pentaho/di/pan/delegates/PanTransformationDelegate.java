@@ -59,16 +59,17 @@ public class PanTransformationDelegate {
   /**
    * Execute a transformation with the specified configuration.
    *
-   * @param transMeta              the transformation metadata
+   * @param trans              the transformation
    * @param executionConfiguration the execution configuration
    * @param arguments              command line arguments
    * @return the execution result
    * @throws KettleException if execution fails
    */
-  public Result executeTransformation( final TransMeta transMeta,
+  public Result executeTransformation( final Trans trans,
                                        final TransExecutionConfiguration executionConfiguration,
                                        final String[] arguments ) throws KettleException {
 
+    TransMeta transMeta = trans.getTransMeta();
     if ( transMeta == null ) {
       throw new KettleException( BaseMessages.getString( pkg, "PanTransformationDelegate.Error.TransMetaNull" ) );
     }
@@ -196,7 +197,7 @@ public class PanTransformationDelegate {
   /**
    * Execute transformation in clustered mode.
    */
-  private Result executeClustered( TransMeta transMeta,
+  protected Result executeClustered( TransMeta transMeta,
                                    TransExecutionConfiguration executionConfiguration ) throws KettleException {
 
     log.logBasic( BaseMessages.getString( pkg, "PanTransformationDelegate.Log.ExecutingClustered" ) );
@@ -281,7 +282,7 @@ public class PanTransformationDelegate {
   /**
    * Log clustered transformation results.
    */
-  private void logClusteredResults( TransMeta transMeta, Result result ) {
+  protected void logClusteredResults( TransMeta transMeta, Result result ) {
     log.logBasic( DASHES );
     log.logBasic( "Got result back from clustered transformation:" );
     log.logBasic( transMeta + DASHES );

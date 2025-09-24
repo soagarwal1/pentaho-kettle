@@ -49,7 +49,7 @@ public class Pan {
 
   private static FileLoggingEventListener fileLoggingEventListener;
 
-  private static PanCommandExecutor commandExecutor;
+  private static EnhancedPanCommandExecutor commandExecutor;
 
   public static void main( String[] a ) throws Exception {
     try {
@@ -348,7 +348,7 @@ public class Pan {
    */
   protected static void configureParameters( Trans trans, NamedParams optionParams,
                                              TransMeta transMeta ) throws UnknownParamException {
-    PanCommandExecutor.configureParameters( trans, optionParams, transMeta );
+    EnhancedPanCommandExecutor.configureParameters( trans, optionParams, transMeta );
   }
 
   private static void exitJVM( int status ) {
@@ -368,11 +368,11 @@ public class Pan {
     System.exit( status );
   }
 
-  public static PanCommandExecutor getCommandExecutor() {
+  public static EnhancedPanCommandExecutor getCommandExecutor() {
     return commandExecutor;
   }
 
-  public static void setCommandExecutor( PanCommandExecutor commandExecutor ) {
+  public static void setCommandExecutor( EnhancedPanCommandExecutor commandExecutor ) {
     Pan.commandExecutor = commandExecutor;
   }
 }

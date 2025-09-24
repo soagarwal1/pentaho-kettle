@@ -12,27 +12,46 @@
 
 package org.pentaho.di.pan;
 
+import org.pentaho.di.base.AbstractBaseCommandExecutor;
 import org.pentaho.di.base.CommandExecutorCodes;
 import org.pentaho.di.base.Params;
+import org.pentaho.di.core.Const;
 import org.pentaho.di.core.Result;
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleMissingPluginsException;
+import org.pentaho.di.core.exception.KettleXMLException;
+import org.pentaho.di.core.extension.ExtensionPointHandler;
+import org.pentaho.di.core.extension.KettleExtensionPoint;
 import org.pentaho.di.core.logging.LogChannelInterface;
 import org.pentaho.di.core.logging.LogLevel;
+import org.pentaho.di.core.parameters.NamedParams;
+import org.pentaho.di.core.parameters.UnknownParamException;
+import org.pentaho.di.core.util.FileUtil;
 import org.pentaho.di.core.util.Utils;
+import org.pentaho.di.core.vfs.KettleVFS;
+import org.pentaho.di.core.xml.XMLHandler;
 import org.pentaho.di.i18n.BaseMessages;
 import org.pentaho.di.pan.delegates.PanTransformationDelegate;
+import org.pentaho.di.repository.RepositoriesMeta;
 import org.pentaho.di.repository.Repository;
+import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.di.repository.RepositoryMeta;
 import org.pentaho.di.repository.RepositoryOperation;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransExecutionConfiguration;
 import org.pentaho.di.trans.TransMeta;
+import org.w3c.dom.Document;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
 
 /**
- * Enhanced PanCommandExecutor that uses the PanTransformationDelegate
+ * EnhancedPanCommandExecutor that uses the PanTransformationDelegate
  * for centralized execution logic.
  */
-public class EnhancedPanCommandExecutor extends PanCommandExecutor {
+public class EnhancedPanCommandExecutor extends AbstractBaseCommandExecutor {
 
   private PanTransformationDelegate transformationDelegate;
   private Repository repository;
@@ -43,11 +62,7 @@ public class EnhancedPanCommandExecutor extends PanCommandExecutor {
     this.transformationDelegate = new PanTransformationDelegate( log );
   }
 
-  /**
-   * Override the main execute method to use the delegate pattern.
-   */
-  @Override
-  public Result execute( final Params params, String[] arguments ) throws Exception {
+  public Result execute( final Params params, String[] arguments ) throws KettleException {
 
     getLog().logMinimal( BaseMessages.getString( getPkgClazz(), "Pan.Log.StartingToRun" ) );
 
@@ -58,16 +73,27 @@ public class EnhancedPanCommandExecutor extends PanCommandExecutor {
 
     // Try to load from repository first if repository parameters are provided
     if ( !Utils.isEmpty( params.getRepoName() ) && !isEnabled( params.getBlockRepoConns() ) && repository == null ) {
-      initializeRepository( params );
+      try {
+        initializeRepository( params );
+      } catch ( KettleException e ) {
+        getLog().logError( "Failed to initialize repository", e );
+        return exitWithStatus( CommandExecutorCodes.Pan.COULD_NOT_LOAD_TRANS.getCode() );
+      }
     }
     // Load transformation from repository or filesystem
     CommandExecutorResult result = validateAndSetPluginContext( getLog(), params, repository );
     if ( result != null && result.getCode() != 0 ) {
       return exitWithStatus( result.getCode() );
     }
-    TransMeta transMeta = loadTransformation( params );
+    Trans trans;
+    try {
+      trans = loadTransformation( params );
+    } catch ( Exception e ) {
+      getLog().logError( BaseMessages.getString( getPkgClazz(), "Pan.Error.ProcessStopError", e.getMessage() ) );
+      return handleTransformationLoadError();
+    }
 
-    if ( transMeta == null ) {
+    if ( trans == null ) {
       if ( !isEnabled( params.getListRepoFiles() ) && !isEnabled( params.getListRepoDirs() )
         && !isEnabled( params.getListRepos() ) && Utils.isEmpty( params.getExportRepo() ) ) {
 
@@ -77,15 +103,26 @@ public class EnhancedPanCommandExecutor extends PanCommandExecutor {
         return exitWithStatus( CommandExecutorCodes.Pan.SUCCESS.getCode() );
       }
     }
+    trans.setLogLevel( getLog().getLogLevel() );
+    configureParameters( trans, params.getNamedParams(), trans.getTransMeta() );
 
+    trans.setSafeModeEnabled( isEnabled( params.getSafeMode() ) ); // run in safe mode if requested
+    trans.setGatheringMetrics( isEnabled( params.getMetrics() ) ); // enable kettle metric gathering if requested
     // Handle parameter listing if requested
     if ( isEnabled( params.getListFileParams() ) ) {
-      printTransformationParameters( new Trans( transMeta ) );
+      printTransformationParameters( trans );
       return exitWithStatus( CommandExecutorCodes.Pan.COULD_NOT_LOAD_TRANS.getCode() );
     }
 
     // Use delegate to execute transformation
-    return executeWithDelegate( transMeta, params, arguments );
+    return executeWithDelegate( trans, params, arguments );
+  }
+
+  private Result handleTransformationLoadError() {
+    if ( repository != null ) {
+      repository.disconnect();
+    }
+    return exitWithStatus( CommandExecutorCodes.Pan.ERRORS_DURING_PROCESSING.getCode(), null );
   }
 
   /**
@@ -102,7 +139,11 @@ public class EnhancedPanCommandExecutor extends PanCommandExecutor {
 
     // Handle repository-based commands
     if ( !Utils.isEmpty( params.getRepoName() ) && !isEnabled( params.getBlockRepoConns() ) ) {
-      initializeRepository( params );
+      try {
+        initializeRepository( params );
+      } catch ( KettleException e ) {
+        return false; // Repository initialization failed, cannot handle repo-based commands
+      }
 
       if ( isEnabled( params.getListRepoFiles() ) || isEnabled( params.getListRepoDirs() )
         || !Utils.isEmpty( params.getExportRepo() ) ) {
@@ -119,27 +160,24 @@ public class EnhancedPanCommandExecutor extends PanCommandExecutor {
   /**
    * Load transformation from repository or filesystem based on parameters.
    */
-  protected TransMeta loadTransformation( Params params ) throws Exception {
+  protected Trans loadTransformation( Params params ) throws KettleException, IOException {
 
-    TransMeta transMeta = null;
+    Trans trans = null;
     if ( repository != null ) {
       // Validate PluginNamedParams when repository is connected
-      Trans trans = loadTransFromRepository( repository, params.getInputDir(), params.getInputFile() );
+      trans = loadTransFromRepository( repository, params.getInputDir(), params.getInputFile() );
       if ( trans != null ) {
-        transMeta = trans.getTransMeta();
+        return trans;
       }
     }
 
     // Try to load from filesystem if not loaded from repository
-    if ( transMeta == null && ( !Utils.isEmpty( params.getLocalFile() ) || !Utils.isEmpty( params.getLocalJarFile() ) ) ) {
-      Trans trans = loadTransFromFilesystem( params.getLocalInitialDir(),
+    if ( !Utils.isEmpty( params.getLocalFile() ) || !Utils.isEmpty( params.getLocalJarFile() ) ) {
+      trans = loadTransFromFilesystem( params.getLocalInitialDir(),
         params.getLocalFile(), params.getLocalJarFile(), params.getBase64Zip() );
-      if ( trans != null ) {
-        transMeta = trans.getTransMeta();
-      }
     }
 
-    return transMeta;
+    return trans;
   }
 
   /**
@@ -147,7 +185,7 @@ public class EnhancedPanCommandExecutor extends PanCommandExecutor {
    * This method shows how to integrate the PanTransformationDelegate
    * into the existing command executor framework.
    */
-  public Result executeWithDelegate( TransMeta transMeta, Params params, String[] arguments ) {
+  public Result executeWithDelegate( Trans trans, Params params, String[] arguments ) {
 
     // Initialize repository if repository parameters are provided
     try {
@@ -165,7 +203,7 @@ public class EnhancedPanCommandExecutor extends PanCommandExecutor {
 
     try {
       // Use the delegate to execute the transformation
-      Result result = transformationDelegate.executeTransformation( transMeta, executionConfiguration, arguments );
+      Result result = transformationDelegate.executeTransformation( trans, executionConfiguration, arguments );
 
       // Set the result for the command executor
       setResult( result );
@@ -298,4 +336,193 @@ public class EnhancedPanCommandExecutor extends PanCommandExecutor {
       this.transformationDelegate = new PanTransformationDelegate( log );
     }
   }
+
+  public int printVersion() {
+    printVersion( "Pan.Log.KettleVersion" );
+    return CommandExecutorCodes.Pan.KETTLE_VERSION_PRINT.getCode();
+  }
+
+  protected void executeRepositoryBasedCommand( Repository repository, String dirName, String listTrans,
+                                                String listDirs, String exportRepo ) throws KettleException {
+
+    RepositoryDirectoryInterface directory = loadRepositoryDirectory( repository, dirName, "Pan.Error.NoRepProvided",
+      "Pan.Log.Allocate&ConnectRep", "Pan.Error.CanNotFindSpecifiedDirectory" );
+
+    if ( directory == null ) {
+      return; // not much we can do here
+    }
+
+    if ( isEnabled( listTrans ) ) {
+      printRepositoryStoredTransformations( repository, directory ); // List the transformations in the repository
+
+    } else if ( isEnabled( listDirs ) ) {
+      printRepositoryDirectories( repository, directory ); // List the directories in the repository
+
+    } else if ( !Utils.isEmpty( exportRepo ) ) {
+      // Export the repository
+      getLog().logMinimal(
+        BaseMessages.getString( getPkgClazz(), "Pan.Log.ExportingObjectsRepToFile", "" + exportRepo ) );
+      repository.getExporter().exportAllObjects( null, exportRepo, directory, "all" );
+      getLog().logMinimal(
+        BaseMessages.getString( getPkgClazz(), "Pan.Log.FinishedExportObjectsRepToFile", "" + exportRepo ) );
+    }
+  }
+
+  public Trans loadTransFromRepository( Repository repository, String dirName, String transName ) throws KettleException {
+
+    if ( Utils.isEmpty( transName ) ) {
+      getLog().logMinimal( BaseMessages.getString( getPkgClazz(), "Pan.Error.NoTransNameSupplied" ) );
+      return null;
+    }
+
+    RepositoryDirectoryInterface directory = loadRepositoryDirectory( repository, dirName, "Pan.Error.NoRepProvided",
+      "Pan.Log.Allocate&ConnectRep", "Pan.Error.CanNotFindSpecifiedDirectory" );
+
+    if ( directory == null ) {
+      return null; // not much we can do here
+    }
+
+    logDebug( "Pan.Log.LoadTransInfo" );
+    TransMeta transMeta = repository.loadTransformation( transName, directory, null, true, null );
+
+    logDebug( "Pan.Log.AllocateTrans" );
+    Trans trans = new Trans( transMeta );
+    trans.setRepository( repository );
+    trans.setMetaStore( getMetaStore() );
+
+    return trans; // return transformation loaded from the repo
+  }
+
+  public Trans loadTransFromFilesystem( String initialDir, String filename, String jarFilename,
+                                        Serializable base64Zip ) throws IOException, KettleMissingPluginsException, KettleXMLException {
+
+    Trans trans = null;
+
+    File zip;
+    if ( base64Zip != null && ( zip = decodeBase64ToZipFile( base64Zip, true ) ) != null ) {
+      // update filename to a meaningful, 'ETL-file-within-zip' syntax
+      filename = "zip:file:" + File.separator + File.separator + zip.getAbsolutePath() + "!" + filename;
+    }
+
+    // Try to load the transformation from file
+    if ( !Utils.isEmpty( filename ) ) {
+
+      String filepath = filename;
+      // If the filename starts with scheme like zip:, then isAbsolute() will return false even though the
+      // the path following the zip is absolute. Check for isAbsolute only if the fileName does not start with scheme
+      if ( !KettleVFS.startsWithScheme( filename ) && !FileUtil.isFullyQualified( filename ) ) {
+        filepath = initialDir + filename;
+      }
+
+      logDebug( "Pan.Log.LoadingTransXML", "" + filepath );
+      TransMeta transMeta = new TransMeta( getBowl(), filepath );
+      trans = new Trans( transMeta );
+    }
+
+    if ( !Utils.isEmpty( jarFilename ) ) {
+
+      try {
+
+        logDebug( "Pan.Log.LoadingTransJar", jarFilename );
+
+        InputStream inputStream = EnhancedPanCommandExecutor.class.getResourceAsStream( jarFilename );
+        StringBuilder xml = new StringBuilder();
+        int c;
+        while ( ( c = inputStream.read() ) != -1 ) {
+          xml.append( (char) c );
+        }
+        inputStream.close();
+        Document document = XMLHandler.loadXMLString( xml.toString() );
+        TransMeta transMeta = new TransMeta( XMLHandler.getSubNode( document, "transformation" ), null );
+        trans = new Trans( transMeta );
+
+      } catch ( Exception e ) {
+
+        logDebug( "Pan.Error.ReadingJar", e.toString() );
+        logDebug( Const.getStackTracker( e ) );
+        throw e;
+      }
+    }
+
+    if ( trans != null ) {
+      trans.setMetaStore( getMetaStore() );
+    }
+
+    return trans;
+  }
+
+  /**
+   * Configures the transformation with the given parameters and their values
+   *
+   * @param trans        the executable transformation object
+   * @param optionParams the list of parameters to set for the transformation
+   * @param transMeta    the transformation metadata
+   * @throws UnknownParamException
+   */
+  protected static void configureParameters( Trans trans, NamedParams optionParams,
+                                             TransMeta transMeta ) throws UnknownParamException {
+    trans.initializeVariablesFrom( null );
+    trans.getTransMeta().setInternalKettleVariables( trans );
+
+    // Map the command line named parameters to the actual named parameters.
+    // Skip for the moment any extra command line parameter not known in the transformation.
+    String[] transParams = trans.listParameters();
+    for ( String param : transParams ) {
+      String value = optionParams.getParameterValue( param );
+      if ( value != null ) {
+        trans.setParameterValue( param, value );
+        transMeta.setParameterValue( param, value );
+      }
+    }
+
+    // Put the parameters over the already defined variable space. Parameters get priority.
+    trans.activateParameters();
+  }
+
+  protected void printTransformationParameters( Trans trans ) throws UnknownParamException {
+
+    if ( trans != null && trans.listParameters() != null ) {
+
+      for ( String pName : trans.listParameters() ) {
+        printParameter( pName, trans.getParameterValue( pName ), trans.getParameterDefault( pName ),
+          trans.getParameterDescription( pName ) );
+      }
+    }
+  }
+
+  protected void printRepositoryStoredTransformations( Repository repository, RepositoryDirectoryInterface directory )
+    throws KettleException {
+
+    logDebug( "Pan.Log.GettingListTransDirectory", "" + directory );
+    String[] transformations = repository.getTransformationNames( directory.getObjectId(), false );
+
+    if ( transformations != null ) {
+      for ( String trans : transformations ) {
+        System.out.println( trans );
+      }
+    }
+  }
+
+  protected void printRepositories( RepositoriesMeta repositoriesMeta ) {
+
+    if ( repositoriesMeta != null ) {
+
+      logDebug( "Pan.Log.GettingListReps" );
+
+      for ( int i = 0; i < repositoriesMeta.nrRepositories(); i++ ) {
+        RepositoryMeta repInfo = repositoriesMeta.getRepository( i );
+        System.out.println( BaseMessages.getString( getPkgClazz(), "Pan.Log.RepNameDesc", "" + ( i + 1 ),
+          repInfo.getName(), repInfo.getDescription() ) );
+      }
+    }
+  }
+  protected Result exitWithStatus( final int exitStatus, Trans trans ) {
+    try {
+      ExtensionPointHandler.callExtensionPoint( getLog(), KettleExtensionPoint.TransformationFinish.id, trans );
+    } catch ( KettleException e ) {
+      getLog().logError( "A KettleException occurred when attempting to call TransformationFinish extension point", e );
+    }
+    return exitWithStatus( exitStatus );
+  }
+
 }
